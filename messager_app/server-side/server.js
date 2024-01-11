@@ -1,31 +1,37 @@
+const { PrismaClient } = require('./prisma/client')
+
+const prisma = new PrismaClient()
+
 const express = require('express');
 const app = express();
-const mysql = require('mysql');
 const bodyparse = require('body-parser');
 const jsonParse = bodyparse.json();
+
+
 
 const cors = require('cors');
 
 app.use(cors());
 
-const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'password',
-    database: 'clients'
-});
-
-connection.connect()
 
 const port = 8080;
 
 app.listen(port, () => console.log("Listen on: "+port));
 
 app.get('/api/users', (req, res) => {
-    connection.query('SELECT * FROM users', (err, rows, fields) => {
-        if(err) throw err
-        res.json(rows)
-    });
+    async function main(){
+      const users = await prisma.user.findMany()
+      res.json(users)
+    }
+
+    main().then(async () => {
+      await prisma.$disconnect
+    }).catch(async (e) => {
+      console.error(e)
+      await prisma.$disconnect()
+      process.exit(1)
+    })
+
 });
 
 app.post('/api/addUsers', jsonParse, (req, res) => {
@@ -34,8 +40,17 @@ app.post('/api/addUsers', jsonParse, (req, res) => {
 });
 
 app.get('/api/messages', (req, res) => {
-    connection.query('SELECT * FROM messages', (err, rows, fields) => {
-        if(err) throw err
-        res.json(rows)
-    });
+
+    async function main(){
+      const getMessages = await prisma.messages.findMany()
+      console.log(getMessages)
+    }
+
+    main().then(async () => {
+      await prisma.$disconnect
+    }).catch(async (e) => {
+      console.error(e)
+      await prisma.$disconnect()
+      process.exit(1)
+    })
 });
