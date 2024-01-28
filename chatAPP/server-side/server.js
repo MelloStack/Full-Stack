@@ -1,7 +1,7 @@
+require("dotenv").config();
 const { createClient } = require("@supabase/supabase-js");
 const bodyParser = require("body-parser");
-require("dotenv").config();
-
+const cors = require("cors");
 const express = require("express");
 const app = express();
 const port = 8080;
@@ -15,6 +15,11 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // .select()
 
 app.use(bodyParser.json());
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 
 async function fetchUsers() {
   const { data, error } = await supabase.from("Users").select();
@@ -39,15 +44,25 @@ app.get("/api/users", (req, res) => {
   });
 });
 
-app.post("/api/login", (req, res) => {
-  //   data.then((data) => {
-  //     if (data[0].email === req.body[0].email) {
-  //         res.json([{id: data[0].id}])
-  //     }
-  //     else{
-  //         res.json("Wrong Email")
-  //     }
-  //   });
+app.post("/api/login", cors(), async function (req, res){
+  fetchUsers().then((data) => {
+    data.map((x) => {
+      const email = x.email;
+      const password = x.password;
+      const ID = x.id;
+
+      // async function dadad() {
+      //   if (email === req.body[0].email && password === req.body[0].password) {
+      //     res.json([{ id: ID }]);
+      //   }
+      // }
+      
+      // dadad().catch((x) => {
+      //   res.send("Erro")
+      // })
+
+    });
+  });
 });
 
 app.get("/api/messages", (req, res) => {
@@ -58,6 +73,6 @@ app.get("/api/messages", (req, res) => {
   });
 });
 
-app.post("/api/mensage/add", (req, res) => {});
+app.post("/api/messages/newMSG", (req, res) => {});
 
 app.listen(port, () => console.log("Ouvindo na Porta: " + port));

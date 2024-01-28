@@ -1,16 +1,23 @@
-// import { create } from 'zustand'
+import { create } from "zustand";
 
-// type CartStore = {
-//     currentId: number,
-//     addCurrentId: (newId:number) => void,
-// }
+type InputEmail = {
+  inputEmail: string;
+  addEmail: (getInputEmail: string) => void;
+};
 
-// type InputName = {
-//     inputName: string,
-//     addName: () => void,
-// }
+type InputPass = {
+  inputPass: string;
+  addPass: (getInputPass: string) => void;
+};
 
-// export const useCartStore = create<CartStore>((set) => ({
-//     currentId: 0,
-//     addCurrentId: (newId) => set(() => ({currentId: newId})),
-// }));
+export const getEmailInputs = create<InputEmail>((set) => ({
+  inputEmail: "",
+  addEmail: (getInputEmail: string) =>
+    set((state) => ({ ...state, inputEmail: getInputEmail })),
+}));
+
+export const getPassInputs = create<InputPass>((set) => ({
+  inputPass: "",
+  addPass: (getInputPass: string) =>
+    set((state) => ({ ...state, inputPass: getInputPass })),
+}));
