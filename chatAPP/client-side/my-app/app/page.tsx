@@ -4,9 +4,7 @@ import { useState } from "react";
 import { getPassInputs, getEmailInputs } from "./modules/zus";
 
 export default function Home() {
-  const [isLogged, setisLogged] = useState(false);
-
-  const [isClicked, setToClicked] = useState(false);
+  const [isLoading, setToLoading] = useState(false);
 
   const { inputPass, addPass } = getPassInputs();
   const { inputEmail, addEmail } = getEmailInputs();
@@ -20,18 +18,20 @@ export default function Home() {
   };
 
   const tryLog = () => {
-    setToClicked(true)
-    if (!inputEmail || !inputPass)
-      return setToClicked(false);
+    setToLoading(true);
     if (
+      !inputEmail ||
+      !inputPass ||
       inputEmail.indexOf("@") === -1 ||
       inputEmail.indexOf("gmail") === -1 ||
       inputEmail.indexOf(".com") === -1
-    )
-      return  setToClicked(false);
+    ) {
+      setToLoading(false);
+      return;
+    }
 
-    async function sendInputs() {
-      const reponse = await fetch("http://localhost:8080/api/login", {
+    async function fetchCorrectUser() {
+      const response = await fetch("http://localhost:8080/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -39,16 +39,38 @@ export default function Home() {
         body: JSON.stringify([{ email: inputEmail, password: inputPass }]),
       });
 
-      return reponse.json();
+      if (response.status === 204) {
+        setToLoading(false);
+        console.log(response.status);
+        return;
+      }
+
+      return response.json();
     }
 
-    sendInputs().then((data) => {
-      console.log(data)
-      setToClicked(false)
-    }).catch((err) => {
-      console.log(err)
-      setToClicked(false)
+    fetchCorrectUser().then((data) => {
+      setToLoading(false);
+      console.log(data);
     });
+
+    // fetch("http://localhost:8080/api/login", {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    //   body: JSON.stringify([{ email: inputEmail, password: inputPass }]),
+    // })
+    // .then((response) => {
+    //   setToClicked(false)
+    //   if(response.status === 204) {
+    //     console.log(response.status)
+    //   }
+
+    //   return response.json()
+    // })
+    // .then((data) => {
+    //   console.log(data)
+    // })
   };
 
   return (
@@ -62,12 +84,16 @@ export default function Home() {
         />
         <input
           onChange={getPassInputValue}
-          type="password"
+          type="text"
           id="password"
           name="password"
           placeholder="password"
         />
-        {isClicked ? <h3>Carregando....</h3> : <input onClick={tryLog} type="submit" value="Login" />}
+        {isLoading ? (
+          <h3>Carregando....</h3>
+        ) : (
+          <input onClick={tryLog} type="submit" value="Login" />
+        )}
       </main>
     </>
   );

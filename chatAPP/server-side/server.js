@@ -10,16 +10,23 @@ const supabaseUrl = "https://apkuarlppngqawvovkqh.supabase.co";
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// const { data, error } = await supabase
-// .from('Users')
-// .select()
-
 app.use(bodyParser.json());
-app.use(
-  cors({
-    origin: "*",
-  })
-);
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Headers, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization"
+  );
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, PUT, POST, DELETE, PATCH, OPTIONS"
+  );
+  next();
+});
+
+const emails = [];
+const passwords = [];
+const IDs = [];
 
 async function fetchUsers() {
   const { data, error } = await supabase.from("Users").select();
@@ -44,25 +51,29 @@ app.get("/api/users", (req, res) => {
   });
 });
 
-app.post("/api/login", cors(), async function (req, res){
+app.post("/api/login", function (req, res) {
   fetchUsers().then((data) => {
     data.map((x) => {
       const email = x.email;
       const password = x.password;
       const ID = x.id;
 
-      // async function dadad() {
-      //   if (email === req.body[0].email && password === req.body[0].password) {
-      //     res.json([{ id: ID }]);
-      //   }
-      // }
-      
-      // dadad().catch((x) => {
-      //   res.send("Erro")
-      // })
-
+      if (email === req.body[0].email && password === req.body[0].password) {
+        emails.push(email);
+        passwords.push(password);
+        IDs.push(ID);
+      }
     });
   });
+
+  if (
+    emails.includes(req.body[0].email) &&
+    passwords.includes(req.body[0].password)
+  ) {
+    res.json([{ id: IDs.pop() }]);
+  }
+
+  res.status(204).send();
 });
 
 app.get("/api/messages", (req, res) => {
