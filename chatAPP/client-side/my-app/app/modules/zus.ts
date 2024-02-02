@@ -10,6 +10,12 @@ type InputPass = {
   addPass: (getInputPass: string) => void;
 };
 
+
+type AllUsersToDisplay = {
+  Users: string[];
+  addUsers: (getUsers: string[]) => void;
+}
+
 export const getEmailInputs = create<InputEmail>((set) => ({
   inputEmail: "",
   addEmail: (getInputEmail: string) =>
@@ -21,3 +27,9 @@ export const getPassInputs = create<InputPass>((set) => ({
   addPass: (getInputPass: string) =>
     set((state) => ({ ...state, inputPass: getInputPass })),
 }));
+
+export const getUsersFunc = create<AllUsersToDisplay>((set:any) => ({
+  Users: [''],
+  // addUsers: (getUsers: any) => set((state) => ({Users: {...state.Users, names: state.Users.names + getUsers}}))
+  addUsers: (getUsers: string[]) => set((state: { Users: any; }) => ({...state, Users: [...state.Users, getUsers]}))
+}))

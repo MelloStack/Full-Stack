@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { getPassInputs, getEmailInputs } from "./modules/zus";
+import { useEffect, useState } from "react";
+import { getPassInputs, getEmailInputs, getUsersFunc } from "./modules/zus";
+import { User } from "lucide-react";
 
 export default function Home() {
   const [isLoading, setToLoading] = useState(false);
 
   const { inputPass, addPass } = getPassInputs();
   const { inputEmail, addEmail } = getEmailInputs();
+  const { Users, addUsers } = getUsersFunc();
 
   const getEmailInputValue = (e: any) => {
     addEmail(e.target.value);
@@ -16,6 +18,12 @@ export default function Home() {
   const getPassInputValue = (e: any) => {
     addPass(e.target.value);
   };
+
+  async function fetchAllUsers() {
+    const response = await fetch("http://localhost:8080/api/Users");
+
+    return response.json();
+  }
 
   const tryLog = () => {
     setToLoading(true);
@@ -48,29 +56,22 @@ export default function Home() {
       return response.json();
     }
 
-    fetchCorrectUser().then((data) => {
+    fetchCorrectUser().then((dataCurrentUser) => {
       setToLoading(false);
-      console.log(data);
+
+      if (!dataCurrentUser) return;
+
+      // console.log(data);
+      fetchAllUsers().then((dataUsers) => {
+        const names = dataUsers[0].names;
+        const ID = dataUsers[0]
+
+        names.map((x:string) => {
+        })
+      })
     });
 
-    // fetch("http://localhost:8080/api/login", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify([{ email: inputEmail, password: inputPass }]),
-    // })
-    // .then((response) => {
-    //   setToClicked(false)
-    //   if(response.status === 204) {
-    //     console.log(response.status)
-    //   }
 
-    //   return response.json()
-    // })
-    // .then((data) => {
-    //   console.log(data)
-    // })
   };
 
   return (
@@ -95,6 +96,7 @@ export default function Home() {
           <input onClick={tryLog} type="submit" value="Login" />
         )}
       </main>
+      {Users.map(x => <h3>{x}</h3>)}
     </>
   );
 }

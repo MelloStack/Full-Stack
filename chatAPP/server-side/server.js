@@ -26,6 +26,7 @@ app.use(function (req, res, next) {
 
 const emails = [];
 const passwords = [];
+const names = [];
 const IDs = [];
 
 async function fetchUsers() {
@@ -47,7 +48,9 @@ app.get("/api/users", (req, res) => {
   fetchedUsers.then((x) => {
     const names = x.map((obj) => obj.name);
 
-    res.json(names);
+    res.json([{
+      names: names
+    }]);
   });
 });
 
@@ -55,12 +58,14 @@ app.post("/api/login", function (req, res) {
   fetchUsers().then((data) => {
     data.map((x) => {
       const email = x.email;
+      const name = x.name;
       const password = x.password;
       const ID = x.id;
 
       if (email === req.body[0].email && password === req.body[0].password) {
         emails.push(email);
         passwords.push(password);
+        names.push(name);
         IDs.push(ID);
       }
     });
@@ -69,8 +74,9 @@ app.post("/api/login", function (req, res) {
   if (
     emails.includes(req.body[0].email) &&
     passwords.includes(req.body[0].password)
+    
   ) {
-    res.json([{ id: IDs.pop() }]);
+    res.json([{ id: IDs.pop(), name: names.pop()}]);
   }
 
   res.status(204).send();
