@@ -1,14 +1,32 @@
 require("dotenv").config();
 const { createClient } = require("@supabase/supabase-js");
 const bodyParser = require("body-parser");
-const cors = require("cors");
 const express = require("express");
 const app = express();
+
+const http = require('http');
+const server = http.createServer(app);
+
+const io = require('socket.io')(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+})
+
+
+
+io.on('connection', (socket) => {
+  console.log("Connect")
+})
+
 const port = 8080;
+
 
 const supabaseUrl = "https://apkuarlppngqawvovkqh.supabase.co";
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
 
 app.use(bodyParser.json());
 app.use(function (req, res, next) {
@@ -44,13 +62,22 @@ async function fetchMsg() {
 const fetchedUsers = fetchUsers();
 const fetchedMsg = fetchMsg();
 
+
 app.get("/api/users", (req, res) => {
   fetchedUsers.then((x) => {
     const names = x.map((obj) => obj.name);
+    // const ids = x.map((obj) => obj.id);
+    let users = []
+
+    x.map((obj) => {
+      users.push([{name:obj.name, id:obj.id}])
+    })
 
     res.json([{
-      names: names
+      names: names,
+      users: users,
     }]);
+    
   });
 });
 
@@ -92,4 +119,4 @@ app.get("/api/messages", (req, res) => {
 
 app.post("/api/messages/newMSG", (req, res) => {});
 
-app.listen(port, () => console.log("Ouvindo na Porta: " + port));
+server.listen(port, () => console.log("Ouvindo na Porta: " + port));
