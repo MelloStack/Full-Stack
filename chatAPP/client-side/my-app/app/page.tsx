@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { getPassInputs, getEmailInputs, getUsersFunc } from "./modules/zus";
-import { io } from "socket.io-client";
 
 export default function Home() {
-
   const [isLoading, setToLoading] = useState(false);
   const [CurrentUserId, setCurrentUserId] = useState(0);
 
@@ -13,8 +11,6 @@ export default function Home() {
   const { inputEmail, addEmail } = getEmailInputs();
   const { Users, addUsers } = getUsersFunc();
 
-  // const socket = io("http://localhost:8080")
-  
   const getEmailInputValue = (e: any) => {
     addEmail(e.target.value);
   };
@@ -110,8 +106,6 @@ export default function Home() {
       });
     });
   };
-
-  
 
   return (
     <>
