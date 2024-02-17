@@ -79,3 +79,16 @@ input {
   border: 1px solid black;
   cursor: pointer;
 }
+
+.chatContainer{
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.chat{
+  width: 500px;
+  height: 500px;
+  border: 1px solid red;
+  display: flex;
+}

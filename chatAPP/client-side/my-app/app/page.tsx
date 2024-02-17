@@ -2,14 +2,61 @@
 
 import { useEffect, useState } from "react";
 import { getPassInputs, getEmailInputs, getUsersFunc } from "./modules/zus";
+import { createClient } from "@supabase/supabase-js";
+
+const SUPABASE_URL = "https://apkuarlppngqawvovkqh.supabase.co";
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_KEY;
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default function Home() {
   const [isLoading, setToLoading] = useState(false);
   const [CurrentUserId, setCurrentUserId] = useState(0);
 
+  const [isMsgProcessed, setMsgProcessed] = useState(false)
+
+  const [ProcessedMsg, setProcessedMsg] = useState([{}]);
+
+  const [MsgObj, setMsgObj] = useState([{}]);
+
   const { inputPass, addPass } = getPassInputs();
   const { inputEmail, addEmail } = getEmailInputs();
   const { Users, addUsers } = getUsersFunc();
+
+  useEffect(() => {
+    const InsertEventSupa = (payload: any) => {
+
+      const msgObj = payload.new;
+      setMsgObj((prevState) => [...prevState, msgObj]);
+      console.log("Created, New Array: " + JSON.stringify(MsgObj));
+    };
+
+    const DeleteEventSupa = (payload: any) => {
+      if (!MsgObj) return;
+      setMsgObj(MsgObj.filter((item) => item.id === payload.new.id));
+      console.log("Deleted, New Array: " + JSON.stringify(MsgObj));
+    };
+
+    const channel = supabase
+      .channel("Msg")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "Msg" },
+        (payload) => {
+          if (payload.eventType == "INSERT") {
+            InsertEventSupa(payload);
+          }
+
+          if (payload.eventType == "DELETE") {
+            DeleteEventSupa(payload);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase]);
 
   const getEmailInputValue = (e: any) => {
     addEmail(e.target.value);
@@ -21,12 +68,6 @@ export default function Home() {
 
   async function fetchAllUsers() {
     const response = await fetch("http://localhost:8080/api/Users");
-
-    return response.json();
-  }
-
-  async function fecthMsg() {
-    const response = await fetch("http://localhost:8080/api/messages");
 
     return response.json();
   }
@@ -76,8 +117,6 @@ export default function Home() {
         });
       });
     });
-
-    fecthMsg();
   };
 
   const getUserChat = (e: any) => {
@@ -87,25 +126,37 @@ export default function Home() {
       users.map((x: any) => {
         if (e.target.innerHTML === x[0].name) {
           const UserChatId = x[0].id;
+          const stringifyMsg = JSON.parse(JSON.stringify(MsgObj))
 
-          fecthMsg().then((data) => {
-            data.map((msg: any) => {
-              const ReceiveBy = msg.ReceiveBy;
-              const SendBy = msg.SendBy;
+          stringifyMsg.map((data:any) => {
 
-              if (UserChatId === CurrentUserId) return;
 
-              if (ReceiveBy != CurrentUserId) return;
+            setProcessedMsg(prevState => [...prevState, data.MessageBody, data.id])
+            setMsgProcessed(true)
+          })
+          // const stringifyMsgReceiveBy = stringifyMsg[0].msgObj.ReceiveBy 
+          // const stringifyMsgSendBy = stringifyMsg[0].msgObj.SendBy 
+          // const stringifyMsgId = stringifyMsg[0].msgObj.id 
+          // const stringifyMsgBody = stringifyMsg[0].msgObj.MessageBody 
 
-              if (SendBy != UserChatId) return;
+          // if(stringifyMsgSendBy != UserChatId) return
 
-              console.log(msg);
-            });
-          });
+          // if(stringifyMsgReceiveBy != CurrentUserId) return
+
+          // setProcessedMsg(prevState => [{...prevState, stringifyMsgBody, stringifyMsgId}])
+
+          // console.log(ProcessedMsg)
+
         }
       });
     });
   };
+
+  const Chat = () => {
+    return (<>
+      {/* {ProcessedMsg.map((data:any) => <h3>{data.MessageBody}</h3>)} */}
+    </>)
+  }
 
   return (
     <>
@@ -131,6 +182,12 @@ export default function Home() {
         {Users.map((x) => (
           <h3 onClick={getUserChat}>{x}</h3>
         ))}
+      </main>
+      <main className="chatContainer">
+        <div className="chat">
+          <Chat />
+          {isMsgProcessed ? <Chat /> : "Carregando Mensagens....."}
+        </div>
       </main>
     </>
   );
