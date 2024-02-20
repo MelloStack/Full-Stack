@@ -11,10 +11,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 export default function Home() {
   const [isLoading, setToLoading] = useState(false);
   const [CurrentUserId, setCurrentUserId] = useState(0);
-
-  const [isMsgProcessed, setMsgProcessed] = useState(false)
-
-  const [ProcessedMsg, setProcessedMsg] = useState([{}]);
+  const [CurrentChatId, setCurrentChatId] = useState(0);
+  const [ReceiveBy, setReceiveBy] = useState(0);
+  const [SendBy, setSendBy] = useState(0);
 
   const [MsgObj, setMsgObj] = useState([{}]);
 
@@ -26,8 +25,13 @@ export default function Home() {
     const InsertEventSupa = (payload: any) => {
 
       const msgObj = payload.new;
+
+      setReceiveBy(payload.new.ReceiveBy)
+      setSendBy(payload.new.SendBy)
+  
       setMsgObj((prevState) => [...prevState, msgObj]);
       console.log("Created, New Array: " + JSON.stringify(MsgObj));
+
     };
 
     const DeleteEventSupa = (payload: any) => {
@@ -126,35 +130,22 @@ export default function Home() {
       users.map((x: any) => {
         if (e.target.innerHTML === x[0].name) {
           const UserChatId = x[0].id;
-          const stringifyMsg = JSON.parse(JSON.stringify(MsgObj))
-
-          stringifyMsg.map((data:any) => {
-
-
-            setProcessedMsg(prevState => [...prevState, data.MessageBody, data.id])
-            setMsgProcessed(true)
-          })
-          // const stringifyMsgReceiveBy = stringifyMsg[0].msgObj.ReceiveBy 
-          // const stringifyMsgSendBy = stringifyMsg[0].msgObj.SendBy 
-          // const stringifyMsgId = stringifyMsg[0].msgObj.id 
-          // const stringifyMsgBody = stringifyMsg[0].msgObj.MessageBody 
-
-          // if(stringifyMsgSendBy != UserChatId) return
-
-          // if(stringifyMsgReceiveBy != CurrentUserId) return
-
-          // setProcessedMsg(prevState => [{...prevState, stringifyMsgBody, stringifyMsgId}])
-
-          // console.log(ProcessedMsg)
-
+          setCurrentChatId(UserChatId)
         }
       });
     });
   };
 
   const Chat = () => {
+
+          
+    if(ReceiveBy != CurrentChatId && ReceiveBy != CurrentUserId) return
+      
+    if(SendBy != CurrentUserId && SendBy != CurrentChatId) return
+
+
     return (<>
-      {/* {ProcessedMsg.map((data:any) => <h3>{data.MessageBody}</h3>)} */}
+      {MsgObj.map((data:any) => <h3 key={data.id}>{data.MessageBody}</h3>)}
     </>)
   }
 
@@ -185,8 +176,9 @@ export default function Home() {
       </main>
       <main className="chatContainer">
         <div className="chat">
+          <h1>{CurrentUserId}</h1>
+          <h1>{CurrentChatId}</h1>
           <Chat />
-          {isMsgProcessed ? <Chat /> : "Carregando Mensagens....."}
         </div>
       </main>
     </>
