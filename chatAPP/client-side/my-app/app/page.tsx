@@ -10,27 +10,47 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default function Home() {
   const [isLoading, setToLoading] = useState(false);
-  const [CurrentUserId, setCurrentUserId] = useState(0);
-  const [CurrentChatId, setCurrentChatId] = useState(0);
-  const [ReceiveBy, setReceiveBy] = useState(0);
-  const [SendBy, setSendBy] = useState(0);
+  const [CurrentUserName, setCurrentUserName] = useState([])
 
+  const [newMessageToCreate, setNewMessageToCreate] = useState('')
   const [MsgObj, setMsgObj] = useState([{}]);
+  const [CurrentUserId, setCurrentUserId] = useState(0);
+
+
+  // const [ReceiveBy, setReceiveBy] = useState(0);
+  // const [SendBy, setSendBy] = useState(0);
+
 
   const { inputPass, addPass } = getPassInputs();
   const { inputEmail, addEmail } = getEmailInputs();
-  const { Users, addUsers } = getUsersFunc();
+
+  async function fetchAllUsers() {
+    const response = await fetch("http://localhost:8080/api/Users");
+
+    return response.json();
+  }
+
+  async function createMSG(MessageBody:string) {
+    const response = await fetch("http://localhost:8080/api/messages/newMSG", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([{person_name: CurrentUserName, SendBy: CurrentUserId, MessageBody: MessageBody }]),
+    });
+
+    return response.json()
+  }
 
   useEffect(() => {
     const InsertEventSupa = (payload: any) => {
-
       const msgObj = payload.new;
 
-      setReceiveBy(payload.new.ReceiveBy)
-      setSendBy(payload.new.SendBy)
-  
+      // setSendBy(payload.new.SendBy);
+
       setMsgObj((prevState) => [...prevState, msgObj]);
       console.log("Created, New Array: " + JSON.stringify(MsgObj));
+      
 
     };
 
@@ -70,11 +90,6 @@ export default function Home() {
     addPass(e.target.value);
   };
 
-  async function fetchAllUsers() {
-    const response = await fetch("http://localhost:8080/api/Users");
-
-    return response.json();
-  }
 
   const tryLog = () => {
     setToLoading(true);
@@ -111,43 +126,36 @@ export default function Home() {
       setToLoading(false);
 
       if (!dataCurrentUser) return;
-
+      console.log(dataCurrentUser)
       setCurrentUserId(dataCurrentUser[0].id);
-      fetchAllUsers().then((dataUsers) => {
-        const names = dataUsers[0].names;
-
-        names.map((x: string[]) => {
-          addUsers(x);
-        });
-      });
+      setCurrentUserName(dataCurrentUser[0].name)
     });
+    
   };
 
-  const getUserChat = (e: any) => {
-    fetchAllUsers().then((dataUsers) => {
-      const users = dataUsers[0].users;
+  const newtextChange = (data:any) => {
+    setNewMessageToCreate(data.target.value)
+  }
 
-      users.map((x: any) => {
-        if (e.target.innerHTML === x[0].name) {
-          const UserChatId = x[0].id;
-          setCurrentChatId(UserChatId)
-        }
-      });
-    });
-  };
+  const createNewMsgFunc = () => {
+    createMSG(newMessageToCreate).then((data) => {
+        console.log(data)
+    })
+  }
 
   const Chat = () => {
 
-          
-    if(ReceiveBy != CurrentChatId && ReceiveBy != CurrentUserId) return
-      
-    if(SendBy != CurrentUserId && SendBy != CurrentChatId) return
-
-
-    return (<>
-      {MsgObj.map((data:any) => <h3 key={data.id}>{data.MessageBody}</h3>)}
-    </>)
-  }
+    return (
+      <>
+        {MsgObj.map((data: any) => (
+          <>
+          <h2>{data.person_name}</h2>
+          <h3 key={data.id}>{data.MessageBody}</h3>
+          </>
+        ))}
+      </>
+    );
+  };
 
   return (
     <>
@@ -170,15 +178,13 @@ export default function Home() {
         ) : (
           <input onClick={tryLog} type="submit" value="Login" />
         )}
-        {Users.map((x) => (
-          <h3 onClick={getUserChat}>{x}</h3>
-        ))}
       </main>
       <main className="chatContainer">
         <div className="chat">
-          <h1>{CurrentUserId}</h1>
-          <h1>{CurrentChatId}</h1>
+          <h1>Voce esta no chat com o nome de {CurrentUserName}</h1>
           <Chat />
+          <input onChange={newtextChange} type="text"></input>
+          <input onClick={createNewMsgFunc} style={{width: "100px"}} type="submit" value="Send"/>
         </div>
       </main>
     </>

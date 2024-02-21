@@ -35,6 +35,7 @@ const emails = [];
 const passwords = [];
 const names = [];
 const IDs = [];
+let ids = 0;
 
 async function fetchUsers() {
   const { data, error } = await supabase.from("Users").select();
@@ -47,6 +48,18 @@ async function fetchMsg() {
 
   return data;
 }
+
+async function createMsg(MessageBody, person_name, SendBy){
+  const {data, error } = await supabase
+  .from('Msg')
+  .insert([{ id: ids, SendBy: SendBy, MessageBody: MessageBody, person_name: person_name }])
+  .select()
+
+  if(error) return console.log(error)
+  ids++;
+}
+
+// createMsg("Ola Mundo", "Luiz Felioe", 1)
 
 const fetchedUsers = fetchUsers();
 const fetchedMsg = fetchMsg();
@@ -106,6 +119,11 @@ app.get("/api/messages", (req, res) => {
   });
 });
 
-app.post("/api/messages/newMSG", (req, res) => {});
+app.post("/api/messages/newMSG", (req, res) => {
+
+  createMsg(req.body[0].MessageBody, req.body[0].person_name, req.body[0].SendBy)
+
+  res.send("200")
+});
 
 server.listen(port, () => console.log("Ouvindo na Porta: " + port));
