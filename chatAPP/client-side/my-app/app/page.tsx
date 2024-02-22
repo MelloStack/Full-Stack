@@ -1,5 +1,18 @@
 "use client";
 
+//SHADCN/UI
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
 import { useEffect, useState } from "react";
 import { getPassInputs, getEmailInputs, getUsersFunc } from "./modules/zus";
 import { createClient } from "@supabase/supabase-js";
@@ -10,16 +23,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default function Home() {
   const [isLoading, setToLoading] = useState(false);
-  const [CurrentUserName, setCurrentUserName] = useState([])
+  const [isLogin, setToLogged] = useState(false);
 
-  const [newMessageToCreate, setNewMessageToCreate] = useState('')
+  const [CurrentUserName, setCurrentUserName] = useState([]);
+
+  const [newMessageToCreate, setNewMessageToCreate] = useState("");
   const [MsgObj, setMsgObj] = useState([{}]);
   const [CurrentUserId, setCurrentUserId] = useState(0);
 
-
   // const [ReceiveBy, setReceiveBy] = useState(0);
-  // const [SendBy, setSendBy] = useState(0);
-
+  const [SendBy, setSendBy] = useState(0);
 
   const { inputPass, addPass } = getPassInputs();
   const { inputEmail, addEmail } = getEmailInputs();
@@ -30,28 +43,32 @@ export default function Home() {
     return response.json();
   }
 
-  async function createMSG(MessageBody:string) {
+  async function createMSG(MessageBody: string) {
     const response = await fetch("http://localhost:8080/api/messages/newMSG", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify([{person_name: CurrentUserName, SendBy: CurrentUserId, MessageBody: MessageBody }]),
+      body: JSON.stringify([
+        {
+          person_name: CurrentUserName,
+          SendBy: CurrentUserId,
+          MessageBody: MessageBody,
+        },
+      ]),
     });
 
-    return response.json()
+    return response.json();
   }
 
   useEffect(() => {
     const InsertEventSupa = (payload: any) => {
       const msgObj = payload.new;
 
-      // setSendBy(payload.new.SendBy);
+      setSendBy(payload.new.SendBy);
 
       setMsgObj((prevState) => [...prevState, msgObj]);
       console.log("Created, New Array: " + JSON.stringify(MsgObj));
-      
-
     };
 
     const DeleteEventSupa = (payload: any) => {
@@ -90,7 +107,6 @@ export default function Home() {
     addPass(e.target.value);
   };
 
-
   const tryLog = () => {
     setToLoading(true);
     if (
@@ -103,6 +119,8 @@ export default function Home() {
       setToLoading(false);
       return;
     }
+
+    setToLogged(true);
 
     async function fetchCurrentUser() {
       const response = await fetch("http://localhost:8080/api/login", {
@@ -126,67 +144,113 @@ export default function Home() {
       setToLoading(false);
 
       if (!dataCurrentUser) return;
-      console.log(dataCurrentUser)
+      console.log(dataCurrentUser);
       setCurrentUserId(dataCurrentUser[0].id);
-      setCurrentUserName(dataCurrentUser[0].name)
+      setCurrentUserName(dataCurrentUser[0].name);
     });
-    
   };
 
-  const newtextChange = (data:any) => {
-    setNewMessageToCreate(data.target.value)
-  }
+  const newtextChange = (data: any) => {
+    setNewMessageToCreate(data.target.value);
+  };
 
   const createNewMsgFunc = () => {
     createMSG(newMessageToCreate).then((data) => {
-        console.log(data)
-    })
-  }
+      console.log(data);
+    });
+  };
 
-  const Chat = () => {
-
+  const MsgContainer = () => {
     return (
       <>
-        {MsgObj.map((data: any) => (
-          <>
-          <h2>{data.person_name}</h2>
-          <h3 key={data.id}>{data.MessageBody}</h3>
-          </>
+       <div className="msg_min_hei">
+       {MsgObj.map((data: any, index) => (
+          <div className={CurrentUserName ? 'LeftText' : 'RigthText'} key={index}>
+            <h2>{data.person_name}</h2>
+            <h3 key={data.id}>{data.MessageBody}</h3>
+          </div>            
         ))}
+       </div>
       </>
     );
   };
 
   return (
     <>
-      <main className="flex min-h-screen flex-col items-center justify-between p-24">
-        <input
-          onChange={getEmailInputValue}
-          type="text"
-          id="name"
-          placeholder="email"
-        />
-        <input
-          onChange={getPassInputValue}
-          type="text"
-          id="password"
-          name="password"
-          placeholder="password"
-        />
-        {isLoading ? (
-          <h3>Carregando....</h3>
+      <section className="sectionMain">
+        {!isLogin ? (
+          <Tabs defaultValue="Login" className="tabsFlex">
+            <TabsList>
+              <TabsTrigger value="Login">Login</TabsTrigger>
+              <TabsTrigger value="Register">Register</TabsTrigger>
+            </TabsList>
+            <TabsContent value="Login">
+              <Card>
+                <CardContent className="card text-center">
+                  <h2>Login in Account</h2>
+                  <div className="space"></div>
+                  <Input
+                    onChange={getEmailInputValue}
+                    id="name"
+                    type="text"
+                    placeholder="Email"
+                  />
+                  <div className="space"></div>
+                  <Input
+                    onChange={getPassInputValue}
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="Password"
+                  />
+                  <div className="space"></div>
+                  {isLoading ? (
+                    <h3>Carregando....</h3>
+                  ) : (
+                    <Button onClick={tryLog}>Login</Button>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="Register">
+              <Card>
+                <CardContent className="card text-center">
+                  <h2>Create Account</h2>
+                  <div className="space"></div>
+                  <Input id="name" type="text" placeholder="Email" />
+                  <div className="space"></div>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="Password"
+                  />
+                  <div className="space"></div>
+                  {isLoading ? (
+                    <h3>Carregando....</h3>
+                  ) : (
+                    <Button onClick={tryLog}>Login</Button>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         ) : (
-          <input onClick={tryLog} type="submit" value="Login" />
+          ""
         )}
-      </main>
-      <main className="chatContainer">
-        <div className="chat">
-          <h1>Voce esta no chat com o nome de {CurrentUserName}</h1>
-          <Chat />
-          <input onChange={newtextChange} type="text"></input>
-          <input onClick={createNewMsgFunc} style={{width: "100px"}} type="submit" value="Send"/>
-        </div>
-      </main>
+        {isLogin ? (
+          <Card>
+            <CardContent className="card text-center">
+              <h1>Voce esta no chat com o nome de {CurrentUserName}</h1>
+              <MsgContainer />
+              <Input onChange={newtextChange} type="text" />
+              <Button onClick={createNewMsgFunc}>Send</Button>
+            </CardContent>
+          </Card>
+        ) : (
+          ""
+        )}
+      </section>
     </>
   );
 }
