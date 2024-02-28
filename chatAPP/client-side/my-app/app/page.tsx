@@ -12,6 +12,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll";
 
 import { useEffect, useState } from "react";
 import { getPassInputs, getEmailInputs, getUsersFunc } from "./modules/zus";
@@ -37,10 +39,18 @@ export default function Home() {
   const { inputPass, addPass } = getPassInputs();
   const { inputEmail, addEmail } = getEmailInputs();
 
-  async function fetchAllUsers() {
-    const response = await fetch("http://localhost:8080/api/Users");
 
-    return response.json();
+  async function sendPostToDeleteMsg(id:number){
+    const response = await fetch("http://localhost:8080/api/messages/delete", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      
+      body: JSON.stringify([{messageId: id}])
+    })
+
+    return response.json()
   }
 
   async function createMSG(MessageBody: string) {
@@ -73,8 +83,11 @@ export default function Home() {
 
     const DeleteEventSupa = (payload: any) => {
       if (!MsgObj) return;
-      setMsgObj(MsgObj.filter((item) => item.id === payload.new.id));
-      console.log("Deleted, New Array: " + JSON.stringify(MsgObj));
+      setMsgObj(MsgObj.filter((item) => item.id === payload.old.id));
+
+      if(MsgObj.includes(payload.old.id)){
+        setMsgObj(MsgObj.filter(payload.old.id))
+      }
     };
 
     const channel = supabase
@@ -109,18 +122,17 @@ export default function Home() {
 
   const tryLog = () => {
     setToLoading(true);
-    if (
-      !inputEmail ||
-      !inputPass ||
-      inputEmail.indexOf("@") === -1 ||
-      inputEmail.indexOf("gmail") === -1 ||
-      inputEmail.indexOf(".com") === -1
-    ) {
-      setToLoading(false);
-      return;
-    }
 
-    setToLogged(true);
+    // if (
+    //   !inputEmail ||
+    //   !inputPass ||
+    //   inputEmail.indexOf("@") === -1 ||
+    //   inputEmail.indexOf("gmail") === -1 ||
+    //   inputEmail.indexOf(".com") === -1
+    // ) {
+    //   setToLoading(false);
+    //   return;
+    // }
 
     async function fetchCurrentUser() {
       const response = await fetch("http://localhost:8080/api/login", {
@@ -137,6 +149,7 @@ export default function Home() {
         return;
       }
 
+      setToLogged(true);
       return response.json();
     }
 
@@ -144,10 +157,12 @@ export default function Home() {
       setToLoading(false);
 
       if (!dataCurrentUser) return;
-      console.log(dataCurrentUser);
       setCurrentUserId(dataCurrentUser[0].id);
       setCurrentUserName(dataCurrentUser[0].name);
     });
+
+    addPass("");
+    addEmail("");
   };
 
   const newtextChange = (data: any) => {
@@ -155,22 +170,61 @@ export default function Home() {
   };
 
   const createNewMsgFunc = () => {
+    if (!newMessageToCreate) return;
+
     createMSG(newMessageToCreate).then((data) => {
       console.log(data);
     });
   };
 
+  const deleteMsg = () => {
+      sendPostToDeleteMsg(1).then((response:number) => {
+        console.log(response)
+    })
+  }
+
   const MsgContainer = () => {
     return (
       <>
-       <div className="msg_min_hei">
-       {MsgObj.map((data: any, index) => (
-          <div className={CurrentUserName ? 'LeftText' : 'RigthText'} key={index}>
-            <h2>{data.person_name}</h2>
-            <h3 key={data.id}>{data.MessageBody}</h3>
-          </div>            
-        ))}
-       </div>
+        <div className="msg_min_hei">
+          {MsgObj.map((data: any, index) => (
+            <div
+              className={CurrentUserName ? "LeftText" : "RigthText"}
+              key={index}
+            >
+              {!data.MessageBody ? (
+                ""
+              ) : (
+                <>
+                  <div className="pic_name">
+                    <Avatar>
+                      <AvatarImage src="https://cdn-icons-png.flaticon.com/512/149/149071.png" />
+                      <AvatarFallback>User Image</AvatarFallback>
+                    </Avatar>
+                    <h2>{data.person_name}</h2>
+                  </div>
+                  <br></br>
+                </>
+              )}
+              {!data.MessageBody ? (
+                ""
+              ) : (
+                <>
+                  <Card>
+                    <CardContent className="card text-center">
+                      <h3 key={data.id}>{data.MessageBody}</h3>
+                      <div className="edit">
+                        <Button onClick={deleteMsg} className="w-[35px] h-[35px]">Delete</Button>
+                        <Button className="w-[35px] h-[35px]" >Edit</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <br></br>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
       </>
     );
   };
@@ -239,10 +293,12 @@ export default function Home() {
           ""
         )}
         {isLogin ? (
-          <Card>
-            <CardContent className="card text-center">
+          <Card className="scroll w-[600px]">
+            <CardContent className="card text-center scroll">
               <h1>Voce esta no chat com o nome de {CurrentUserName}</h1>
-              <MsgContainer />
+              <ScrollArea className="h-[450px]">
+                <MsgContainer />
+              </ScrollArea>
               <Input onChange={newtextChange} type="text" />
               <Button onClick={createNewMsgFunc}>Send</Button>
             </CardContent>

@@ -43,20 +43,40 @@ async function fetchUsers() {
   return data;
 }
 
+async function deleteMsg(id)
+{
+
+  const { error } = await supabase
+  .from('Msg')
+  .delete()
+  .eq('id', id)
+
+  if (error) throw error
+}
+
 async function fetchMsg() {
   const { data, error } = await supabase.from("Msg").select();
 
   return data;
 }
 
+let id = 0
+
+fetchMsg().then((dataIds) =>{
+  dataIds.map((e) => {
+    id = e.id
+  })
+})
+
+
 async function createMsg(MessageBody, person_name, SendBy){
+  id += 1
   const {data, error } = await supabase
   .from('Msg')
-  .insert([{ id: ids, SendBy: SendBy, MessageBody: MessageBody, person_name: person_name }])
+  .insert([{ id: id, SendBy: SendBy, MessageBody: MessageBody, person_name: person_name }])
   .select()
-
+  
   if(error) return console.log(error)
-  ids++;
 }
 
 // createMsg("Ola Mundo", "Luiz Felioe", 1)
@@ -72,7 +92,7 @@ app.get("/api/users", (req, res) => {
     let users = []
 
     x.map((obj) => {
-      users.push([{name:obj.name, id:obj.id}])
+      users.push([{name:obj.name, id:obj.id, email: obj.email}])
     })
 
     res.json([{
@@ -91,14 +111,19 @@ app.post("/api/login", function (req, res) {
       const password = x.password;
       const ID = x.id;
 
-      if (email === req.body[0].email && password === req.body[0].password) {
+      if (email === req.body[0].email && password === req.body[0].password) 
+      {
         emails.push(email);
         passwords.push(password);
         names.push(name);
         IDs.push(ID);
       }
     });
+    
   });
+
+  console.log(req.body[0].email)
+  console.log(req.body[0].password)
 
   if (
     emails.includes(req.body[0].email) &&
@@ -125,5 +150,14 @@ app.post("/api/messages/newMSG", (req, res) => {
 
   res.send("200")
 });
+
+app.post('/api/messages/delete', (req, res) => {
+
+  console.log(req.body)
+
+  deleteMsg(req.body[0].messageId)
+        
+  res.status(200).send()
+})
 
 server.listen(port, () => console.log("Ouvindo na Porta: " + port));
