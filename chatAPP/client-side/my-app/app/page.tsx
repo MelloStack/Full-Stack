@@ -6,11 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+  CardContent,  
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll";
@@ -31,6 +27,7 @@ export default function Home() {
 
   const [newMessageToCreate, setNewMessageToCreate] = useState("");
   const [MsgObj, setMsgObj] = useState([{}]);
+  let MsgObjArray = [{}]
   const [CurrentUserId, setCurrentUserId] = useState(0);
 
   // const [ReceiveBy, setReceiveBy] = useState(0);
@@ -50,7 +47,8 @@ export default function Home() {
       body: JSON.stringify([{messageId: id}])
     })
 
-    return response.json()
+    return response.json()      
+
   }
 
   async function createMSG(MessageBody: string) {
@@ -78,17 +76,18 @@ export default function Home() {
       setSendBy(payload.new.SendBy);
 
       setMsgObj((prevState) => [...prevState, msgObj]);
-      console.log("Created, New Array: " + JSON.stringify(MsgObj));
+      MsgObjArray.push(msgObj)
+      console.log(MsgObj)
     };
 
-    const DeleteEventSupa = (payload: any) => {
-      if (!MsgObj) return;
-      setMsgObj(MsgObj.filter((item) => item.id === payload.old.id));
+    const deleteEvent = (payload: any) => {
+      const oldPayload = payload.old
 
-      if(MsgObj.includes(payload.old.id)){
-        setMsgObj(MsgObj.filter(payload.old.id))
-      }
-    };
+      
+      setMsgObj(MsgObjArray.filter((item) => item.id != oldPayload.id));
+      MsgObjArray = MsgObjArray.filter((item) => item.id != oldPayload.id)
+      console.log(MsgObjArray)
+    }
 
     const channel = supabase
       .channel("Msg")
@@ -100,8 +99,8 @@ export default function Home() {
             InsertEventSupa(payload);
           }
 
-          if (payload.eventType == "DELETE") {
-            DeleteEventSupa(payload);
+          if(payload.eventType == "DELETE"){
+            deleteEvent(payload)
           }
         }
       )
@@ -177,8 +176,8 @@ export default function Home() {
     });
   };
 
-  const deleteMsg = () => {
-      sendPostToDeleteMsg(1).then((response:number) => {
+  const deleteMsg = (e:any) => {
+      sendPostToDeleteMsg(e.target.id).then((response:number) => {
         console.log(response)
     })
   }
@@ -214,8 +213,7 @@ export default function Home() {
                     <CardContent className="card text-center">
                       <h3 key={data.id}>{data.MessageBody}</h3>
                       <div className="edit">
-                        <Button onClick={deleteMsg} className="w-[35px] h-[35px]">Delete</Button>
-                        <Button className="w-[35px] h-[35px]" >Edit</Button>
+                        <Button id={data.id} onClick={deleteMsg} className="w-[35px] h-[35px]">Delete</Button>
                       </div>
                     </CardContent>
                   </Card>
